@@ -57,14 +57,17 @@ def index():
 @app.route('/add-to-cart', methods=['POST'])
 def add_to_cart():
     book_title = request.form.get('title')
-    quantity = int(request.form.get('quantity', 1))
-    
-    book = None
-    for b in BOOKS:
-        if b.title == book_title:
-            book = b
-            break
-    
+
+    # Add error handling for int() conversion
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except (ValueError, TypeError):
+        flash('Invalid quantity value. Please enter a valid number.', 'error')
+        return redirect(url_for('index'))
+
+    # Use existing helper function for book lookup
+    book = get_book_by_title(book_title)
+
     if book:
         cart.add_book(book, quantity)
         flash(f'Added {quantity} "{book.title}" to cart!', 'success')
@@ -100,15 +103,21 @@ def update_cart():
         - Confirmation of update otherwise
     """
     book_title = request.form.get('title')
-    quantity = int(request.form.get('quantity', 1))
-    
+
+    # Add error handling for int() conversion
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except (ValueError, TypeError):
+        flash('Invalid quantity value. Please enter a valid number.', 'error')
+        return redirect(url_for('view_cart'))
+
     cart.update_quantity(book_title, quantity)
-    
+
     if quantity <= 0:
         flash(f'Removed "{book_title}" from cart!', 'success')
     else:
         flash(f'Updated "{book_title}" quantity to {quantity}!', 'success')
-    
+
     return redirect(url_for('view_cart'))
 
 
@@ -160,16 +169,19 @@ def process_checkout():
     }
     
     discount_code = request.form.get('discount_code', '')
-    
+
     # Calculate total with discount
     total_amount = cart.get_total_price()
     discount_applied = 0
-    
-    if discount_code == 'SAVE10':
+
+    # Make discount codes case-insensitive
+    discount_code_upper = discount_code.upper()
+
+    if discount_code_upper == 'SAVE10':
         discount_applied = total_amount * 0.10
         total_amount -= discount_applied
         flash(f'Discount applied! You saved ${discount_applied:.2f}', 'success')
-    elif discount_code == 'WELCOME20':
+    elif discount_code_upper == 'WELCOME20':
         discount_applied = total_amount * 0.20
         total_amount -= discount_applied
         flash(f'Welcome discount applied! You saved ${discount_applied:.2f}', 'success')
@@ -251,25 +263,34 @@ def register():
         password = request.form.get('password')
         name = request.form.get('name')
         address = request.form.get('address', '')
-        
+
         # Validate required fields
         if not email or not password or not name:
             flash('Please fill in all required fields', 'error')
             return render_template('register.html')
-        
-        if email in users:
+
+        # Add email format validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            flash('Please enter a valid email address', 'error')
+            return render_template('register.html')
+
+        # Make email comparison case-insensitive
+        email_lower = email.lower()
+        if any(existing_email.lower() == email_lower for existing_email in users.keys()):
             flash('An account with this email already exists', 'error')
             return render_template('register.html')
-        
-        # Create new user
+
+        # Create new user (store with original case but check case-insensitively)
         user = User(email, password, name, address)
         users[email] = user
-        
+
         # Log in the user
         session['user_email'] = email
         flash('Account created successfully! You are now logged in.', 'success')
         return redirect(url_for('index'))
-    
+
     return render_template('register.html')
 
 

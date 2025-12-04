@@ -1,3 +1,7 @@
+import random
+import datetime
+
+
 class Book:
     def __init__(self, title, category, price, image):
         self.title = title
@@ -50,14 +54,15 @@ class Cart:
 
     def update_quantity(self, book_title, quantity):
         if book_title in self.items:
-            self.items[book_title].quantity = quantity
+            if quantity <= 0:
+                # Remove item from cart if quantity is zero or negative
+                del self.items[book_title]
+            else:
+                self.items[book_title].quantity = quantity
 
     def get_total_price(self):
-        total = 0
-        for item in self.items.values():
-            for i in range(item.quantity):
-                total += item.book.price
-        return total
+        # Optimized calculation using direct multiplication
+        return sum(item.book.price * item.quantity for item in self.items.values())
 
     def get_total_items(self):
         return sum(item.quantity for item in self.items.values())
@@ -80,21 +85,24 @@ class User:
         self.name = name
         self.address = address
         self.orders = []
-        self.temp_data = []
-        self.cache = {}
+        self._orders_sorted = True  # Track if orders are sorted
     
     def add_order(self, order):
+        # Use lazy sorting for better performance
         self.orders.append(order)
-        self.orders.sort(key=lambda x: x.order_date)
-    
+        self._orders_sorted = False
+
     def get_order_history(self):
-        return [order for order in self.orders]
+        # Sort only when needed (lazy evaluation)
+        if not self._orders_sorted:
+            self.orders.sort(key=lambda x: x.order_date, reverse=True)
+            self._orders_sorted = True
+        return self.orders
 
 
 class Order:
     """Order management class"""
     def __init__(self, order_id, user_email, items, shipping_info, payment_info, total_amount):
-        import datetime
         self.order_id = order_id
         self.user_email = user_email
         self.items = items.copy()  # Copy of cart items
@@ -123,7 +131,7 @@ class PaymentGateway:
     def process_payment(payment_info):
         """Mock payment processing - returns success/failure with mock logic"""
         card_number = payment_info.get('card_number', '')
-        
+
         # Mock logic: cards ending in '1111' fail, others succeed
         if card_number.endswith('1111'):
             return {
@@ -131,18 +139,12 @@ class PaymentGateway:
                 'message': 'Payment failed: Invalid card number',
                 'transaction_id': None
             }
-        
-        import random
-        import time
-        import datetime
-        
-        time.sleep(0.1)
-        
+
         transaction_id = f"TXN{random.randint(100000, 999999)}"
-        
+
         if payment_info.get('payment_method') == 'paypal':
             pass
-        
+
         return {
             'success': True,
             'message': 'Payment processed successfully',
