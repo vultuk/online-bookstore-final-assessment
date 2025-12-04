@@ -35,23 +35,25 @@ class TestCartRoutes:
 
     @pytest.mark.bug
     def test_add_to_cart_non_numeric_quantity(self, client):
-        """BUG #2: Test adding book with non-numeric quantity crashes"""
-        # This should handle the error gracefully, but will crash
-        with pytest.raises(ValueError):
-            client.post('/add-to-cart', data={
-                'title': 'The Great Gatsby',
-                'quantity': 'abc'
-            })
+        """FIXED BUG #2: Test adding book with non-numeric quantity now handles gracefully"""
+        response = client.post('/add-to-cart', data={
+            'title': 'The Great Gatsby',
+            'quantity': 'abc'
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+        assert b'Invalid quantity' in response.data or b'error' in response.data.lower()
 
     @pytest.mark.bug
     def test_add_to_cart_empty_quantity(self, client):
-        """BUG #2: Test adding book with empty quantity string crashes"""
-        # Empty string will be caught by default value, but '' still causes issues
-        with pytest.raises(ValueError):
-            client.post('/add-to-cart', data={
-                'title': 'The Great Gatsby',
-                'quantity': ''
-            })
+        """FIXED BUG #2: Test adding book with empty quantity string now handles gracefully"""
+        response = client.post('/add-to-cart', data={
+            'title': 'The Great Gatsby',
+            'quantity': ''
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+        assert b'Invalid quantity' in response.data or b'error' in response.data.lower()
 
     def test_add_to_cart_nonexistent_book(self, client):
         """Test adding a book that doesn't exist"""
@@ -133,18 +135,19 @@ class TestCartRoutes:
 
     @pytest.mark.bug
     def test_update_cart_non_numeric_quantity(self, client):
-        """BUG #2: Test updating cart with non-numeric quantity crashes"""
+        """FIXED BUG #2: Test updating cart with non-numeric quantity now handles gracefully"""
         client.post('/add-to-cart', data={
             'title': 'The Great Gatsby',
             'quantity': '2'
         })
 
-        # This will crash due to int() conversion without try-catch
-        with pytest.raises(ValueError):
-            client.post('/update-cart', data={
-                'title': 'The Great Gatsby',
-                'quantity': 'invalid'
-            })
+        response = client.post('/update-cart', data={
+            'title': 'The Great Gatsby',
+            'quantity': 'invalid'
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+        assert b'Invalid quantity' in response.data or b'error' in response.data.lower()
 
     def test_remove_from_cart(self, client):
         """Test removing a book from cart"""
