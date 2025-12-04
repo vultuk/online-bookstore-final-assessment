@@ -33,6 +33,23 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
 
+    - name: Run security tests
+      run: |
+        mkdir -p reports/security
+        pytest tests/security/ -v -m security
+      continue-on-error: false
+
+    - name: Run security scan with bandit
+      run: |
+        bandit -r app.py models.py -f json -o reports/security/bandit.json || true
+        bandit -r app.py models.py
+      continue-on-error: true
+
+    - name: Check dependencies for vulnerabilities
+      run: |
+        safety check || true
+      continue-on-error: true
+
     - name: Run unit tests
       run: |
         pytest tests/unit/ -v -m unit --cov=models --cov-report=term-missing --cov-report=html:reports/coverage/unit
@@ -48,9 +65,29 @@ jobs:
         pytest tests/performance/ -v -m performance --benchmark-only --benchmark-autosave
       continue-on-error: true
 
+    - name: Check code coverage threshold (95%)
+      run: |
+        pytest tests/ --cov=. --cov-report=term --cov-fail-under=95 || echo "Coverage below 95% - consider this a warning"
+      continue-on-error: true
+
     - name: Generate combined coverage report
       run: |
         pytest tests/ --cov=. --cov-report=html:reports/coverage --cov-report=xml:reports/coverage/coverage.xml --cov-report=term
+
+    - name: Run flake8 linting
+      run: |
+        flake8 app.py models.py tests/ --max-line-length=120 --statistics --exit-zero
+      continue-on-error: true
+
+    - name: Run pylint analysis
+      run: |
+        pylint app.py models.py --fail-under=8.0 --exit-zero
+      continue-on-error: true
+
+    - name: Check code complexity
+      run: |
+        radon cc app.py models.py -a -nb
+      continue-on-error: true
 
     - name: Upload test results
       if: always()
@@ -79,6 +116,13 @@ jobs:
       with:
         name: html-test-report
         path: reports/html/
+
+    - name: Upload security reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: reports/security/
 
     - name: Comment test results on PR
       if: github.event_name == 'pull_request'
