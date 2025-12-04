@@ -91,35 +91,35 @@ jobs:
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-results
         path: reports/junit/results.xml
 
     - name: Upload coverage reports
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: reports/coverage/
 
     - name: Upload benchmark results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: .benchmarks/
 
     - name: Upload HTML test report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: html-test-report
         path: reports/html/
 
     - name: Upload security reports
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: reports/security/
