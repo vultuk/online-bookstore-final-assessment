@@ -31,15 +31,18 @@ class TestUser:
         assert user.address == ""
 
     @pytest.mark.bug
-    def test_unused_attributes_exist(self):
-        """BUG #7: Test that unused attributes temp_data and cache exist"""
+    def test_unused_attributes_removed(self):
+        """FIXED BUG #7: Verify that unused attributes temp_data and cache were removed"""
         user = User("test@example.com", "password")
 
-        # These attributes are never used in the codebase
-        assert hasattr(user, 'temp_data'), "Bug: temp_data attribute exists but is never used"
-        assert hasattr(user, 'cache'), "Bug: cache attribute exists but is never used"
-        assert user.temp_data == []
-        assert user.cache == {}
+        # These attributes should no longer exist after bug fix
+        assert not hasattr(user, 'temp_data'), "temp_data attribute should have been removed"
+        assert not hasattr(user, 'cache'), "cache attribute should have been removed"
+
+        # Verify that essential attributes still exist
+        assert hasattr(user, 'email')
+        assert hasattr(user, 'orders')
+        assert hasattr(user, '_orders_sorted')
 
     def test_add_order(self, sample_user, sample_order):
         """Test adding an order to user"""

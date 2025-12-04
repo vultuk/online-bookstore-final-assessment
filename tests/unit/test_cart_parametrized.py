@@ -3,7 +3,6 @@ from models import Book, Cart, PaymentGateway
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize
 class TestCartParametrized:
     """Parametrized tests for Cart class covering multiple scenarios efficiently"""
 
@@ -122,7 +121,6 @@ class TestCartParametrized:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize
 class TestBookSearchParametrized:
     """Parametrized tests for book search functionality"""
 
@@ -151,7 +149,6 @@ class TestBookSearchParametrized:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize
 class TestOrderDateSorting:
     """Parametrized tests for order date sorting"""
 
